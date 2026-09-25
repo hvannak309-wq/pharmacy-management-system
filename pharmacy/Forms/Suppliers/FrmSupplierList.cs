@@ -5,46 +5,35 @@ using pharmacy.Models;
 
 namespace pharmacy.Forms.Suppliers
 {
-    public class FrmSupplierList : BaseForm
+    public partial class FrmSupplierList : BaseForm
     {
         private readonly IRepository<Supplier> _repo;
-        private readonly DataGridView dgv = new();
-        private readonly TextBox txtSearch = new();
 
         public FrmSupplierList(IRepository<Supplier> repo)
         {
+            InitializeComponent();
             _repo = repo;
-            Text = "Suppliers";
-            ClientSize = new Size(800, 450);
-            MinimumSize = new Size(550, 320);
-
-            var toolbar = new FlowLayoutPanel { Dock = DockStyle.Top, Height = 48, Padding = new Padding(8, 8, 8, 0), WrapContents = false };
-            var lbl = new Label { Text = "Search:", AutoSize = true, Margin = new Padding(0, 10, 4, 0) };
-            txtSearch.Width = 220;
-            txtSearch.Margin = new Padding(0, 6, 12, 0);
-            txtSearch.TextChanged += async (_, _) => await LoadDataAsync();
-
-            var btnNew = MakeButton("New (F2)", Color.FromArgb(41, 128, 185));
-            btnNew.Margin = new Padding(0, 2, 8, 0);
-            btnNew.Click += (_, _) => Edit(null);
-
-            var btnEdit = MakeButton("Edit", Color.FromArgb(39, 174, 96));
-            btnEdit.Margin = new Padding(0, 2, 8, 0);
-            btnEdit.Click += (_, _) => EditSelected();
-
-            var btnDelete = MakeButton("Delete", Color.FromArgb(231, 76, 60));
-            btnDelete.Margin = new Padding(0, 2, 8, 0);
-            btnDelete.Click += async (_, _) => await DeleteAsync();
-
-            toolbar.Controls.AddRange([lbl, txtSearch, btnNew, btnEdit, btnDelete]);
-            dgv.Dock = DockStyle.Fill;
             GridStyler.Apply(dgv);
-            dgv.CellDoubleClick += (_, _) => EditSelected();
-            KeyDown += (_, e) => { if (e.KeyCode == Keys.F2) Edit(null); if (e.KeyCode == Keys.F4) txtSearch.Focus(); if (e.KeyCode == Keys.Delete) _ = DeleteAsync(); };
-
-            Controls.AddRange([dgv, toolbar]);
-            Load += async (_, _) => await LoadDataAsync();
         }
+
+        private async void txtSearch_TextChanged(object? sender, EventArgs e) => await LoadDataAsync();
+
+        private void btnNew_Click(object? sender, EventArgs e) => Edit(null);
+
+        private void btnEdit_Click(object? sender, EventArgs e) => EditSelected();
+
+        private async void btnDelete_Click(object? sender, EventArgs e) => await DeleteAsync();
+
+        private void dgv_CellDoubleClick(object? sender, DataGridViewCellEventArgs e) => EditSelected();
+
+        private void FrmSupplierList_KeyDown(object? sender, KeyEventArgs e)
+        {
+            if (e.KeyCode == Keys.F2) Edit(null);
+            if (e.KeyCode == Keys.F4) txtSearch.Focus();
+            if (e.KeyCode == Keys.Delete) _ = DeleteAsync();
+        }
+
+        private async void FrmSupplierList_Load(object? sender, EventArgs e) => await LoadDataAsync();
 
         private async Task LoadDataAsync()
         {
@@ -85,72 +74,28 @@ namespace pharmacy.Forms.Suppliers
         }
     }
 
-    public class FrmSupplierEdit : BaseForm
+    public partial class FrmSupplierEdit : BaseForm
     {
         private readonly Supplier _s;
-        private readonly TextBox txtName = new();
-        private readonly TextBox txtPhone = new();
-        private readonly TextBox txtEmail = new();
-        private readonly TextBox txtAddress = new();
-        private readonly CheckBox chkActive = new() { Text = "Active (uncheck to deactivate)" };
 
         public FrmSupplierEdit(Supplier s)
         {
+            InitializeComponent();
             _s = s;
             Text = s.Id == 0 ? "New Supplier" : "Edit Supplier";
-            ClientSize = new Size(460, 400);
-            FormBorderStyle = FormBorderStyle.FixedDialog;
-            MaximizeBox = false; MinimizeBox = false;
-
-            var layout = new TableLayoutPanel
-            {
-                Dock = DockStyle.Fill,
-                Padding = new Padding(16),
-                ColumnCount = 1,
-                RowCount = 9
-            };
-            for (var i = 0; i < 8; i++) layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 24));
-            layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 52));
-
-            void AddLabel(string text, int row)
-            {
-                var l = new Label { Text = text, AutoSize = true, Anchor = AnchorStyles.Left };
-                layout.Controls.Add(l, 0, row);
-            }
-            void AddControl(Control c, int row)
-            {
-                c.Dock = DockStyle.Fill;
-                layout.Controls.Add(c, 0, row);
-            }
-
-            AddLabel("Name", 0); AddControl(txtName, 1);
-            AddLabel("Phone", 2); AddControl(txtPhone, 3);
-            AddLabel("Email", 4); AddControl(txtEmail, 5);
-            AddLabel("Address", 6); AddControl(txtAddress, 7);
             chkActive.Checked = s.IsActive;
-            layout.Controls.Add(chkActive, 0, 8);
-
-            var btnPanel = new FlowLayoutPanel { Dock = DockStyle.Fill, FlowDirection = FlowDirection.RightToLeft, Padding = new Padding(0, 8, 0, 0) };
-            var btnCancel = MakeButton("Cancel", Color.FromArgb(149, 165, 166));
-            btnCancel.Click += (_, _) => { DialogResult = DialogResult.Cancel; Close(); };
-            var btnSave = MakeButton("Save", Color.FromArgb(39, 174, 96));
-            btnSave.Click += (_, _) => Save();
-            btnPanel.Controls.Add(btnCancel);
-            btnPanel.Controls.Add(btnSave);
-
-            var root = new TableLayoutPanel { Dock = DockStyle.Fill, RowCount = 2, ColumnCount = 1, Padding = new Padding(0) };
-            root.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
-            root.RowStyles.Add(new RowStyle(SizeType.Absolute, 52));
-            root.Controls.Add(layout, 0, 0);
-            root.Controls.Add(btnPanel, 0, 1);
-            Controls.Add(root);
-
-            AcceptButton = btnSave;
-            CancelButton = btnCancel;
-            Shown += (_, _) => txtName.Focus();
-
             txtName.Text = s.Name; txtPhone.Text = s.Phone; txtEmail.Text = s.Email; txtAddress.Text = s.Address;
         }
+
+        private void btnCancel_Click(object? sender, EventArgs e)
+        {
+            DialogResult = DialogResult.Cancel;
+            Close();
+        }
+
+        private void btnSave_Click(object? sender, EventArgs e) => Save();
+
+        private void FrmSupplierEdit_Shown(object? sender, EventArgs e) => txtName.Focus();
 
         private void Save()
         {
@@ -165,46 +110,35 @@ namespace pharmacy.Forms.Suppliers
         }
     }
 
-    public class FrmCustomerList : BaseForm
+    public partial class FrmCustomerList : BaseForm
     {
         private readonly IRepository<Customer> _repo;
-        private readonly DataGridView dgv = new();
-        private readonly TextBox txtSearch = new();
 
         public FrmCustomerList(IRepository<Customer> repo)
         {
+            InitializeComponent();
             _repo = repo;
-            Text = "Customers";
-            ClientSize = new Size(800, 450);
-            MinimumSize = new Size(550, 320);
-
-            var toolbar = new FlowLayoutPanel { Dock = DockStyle.Top, Height = 48, Padding = new Padding(8, 8, 8, 0), WrapContents = false };
-            var lbl = new Label { Text = "Search:", AutoSize = true, Margin = new Padding(0, 10, 4, 0) };
-            txtSearch.Width = 220;
-            txtSearch.Margin = new Padding(0, 6, 12, 0);
-            txtSearch.TextChanged += async (_, _) => await LoadDataAsync();
-
-            var btnNew = MakeButton("New (F2)", Color.FromArgb(41, 128, 185));
-            btnNew.Margin = new Padding(0, 2, 8, 0);
-            btnNew.Click += (_, _) => Edit(null);
-
-            var btnEdit = MakeButton("Edit", Color.FromArgb(39, 174, 96));
-            btnEdit.Margin = new Padding(0, 2, 8, 0);
-            btnEdit.Click += (_, _) => EditSelected();
-
-            var btnDelete = MakeButton("Delete", Color.FromArgb(231, 76, 60));
-            btnDelete.Margin = new Padding(0, 2, 8, 0);
-            btnDelete.Click += async (_, _) => await DeleteAsync();
-
-            toolbar.Controls.AddRange([lbl, txtSearch, btnNew, btnEdit, btnDelete]);
-            dgv.Dock = DockStyle.Fill;
             GridStyler.Apply(dgv);
-            dgv.CellDoubleClick += (_, _) => EditSelected();
-            KeyDown += (_, e) => { if (e.KeyCode == Keys.F2) Edit(null); if (e.KeyCode == Keys.F4) txtSearch.Focus(); if (e.KeyCode == Keys.Delete) _ = DeleteAsync(); };
-
-            Controls.AddRange([dgv, toolbar]);
-            Load += async (_, _) => await LoadDataAsync();
         }
+
+        private async void txtSearch_TextChanged(object? sender, EventArgs e) => await LoadDataAsync();
+
+        private void btnNew_Click(object? sender, EventArgs e) => Edit(null);
+
+        private void btnEdit_Click(object? sender, EventArgs e) => EditSelected();
+
+        private async void btnDelete_Click(object? sender, EventArgs e) => await DeleteAsync();
+
+        private void dgv_CellDoubleClick(object? sender, DataGridViewCellEventArgs e) => EditSelected();
+
+        private void FrmCustomerList_KeyDown(object? sender, KeyEventArgs e)
+        {
+            if (e.KeyCode == Keys.F2) Edit(null);
+            if (e.KeyCode == Keys.F4) txtSearch.Focus();
+            if (e.KeyCode == Keys.Delete) _ = DeleteAsync();
+        }
+
+        private async void FrmCustomerList_Load(object? sender, EventArgs e) => await LoadDataAsync();
 
         private async Task LoadDataAsync()
         {
@@ -245,59 +179,27 @@ namespace pharmacy.Forms.Suppliers
         }
     }
 
-    public class FrmCustomerEdit : BaseForm
+    public partial class FrmCustomerEdit : BaseForm
     {
         private readonly Customer _c;
-        private readonly TextBox txtName = new();
-        private readonly TextBox txtPhone = new();
-        private readonly TextBox txtEmail = new();
-        private readonly TextBox txtAddress = new();
 
         public FrmCustomerEdit(Customer c)
         {
+            InitializeComponent();
             _c = c;
             Text = c.Id == 0 ? "New Customer" : "Edit Customer";
-            ClientSize = new Size(460, 360);
-            FormBorderStyle = FormBorderStyle.FixedDialog;
-            MaximizeBox = false; MinimizeBox = false;
-
-            var layout = new TableLayoutPanel
-            {
-                Dock = DockStyle.Fill,
-                Padding = new Padding(16),
-                ColumnCount = 1,
-                RowCount = 8
-            };
-            for (var i = 0; i < 8; i++) layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 24));
-
-            void AddLabel(string text, int row) => layout.Controls.Add(new Label { Text = text, AutoSize = true, Anchor = AnchorStyles.Left }, 0, row);
-            void AddControl(Control c, int row) { c.Dock = DockStyle.Fill; layout.Controls.Add(c, 0, row); }
-
-            AddLabel("Name", 0); AddControl(txtName, 1);
-            AddLabel("Phone", 2); AddControl(txtPhone, 3);
-            AddLabel("Email", 4); AddControl(txtEmail, 5);
-            AddLabel("Address", 6); txtAddress.Height = 60; AddControl(txtAddress, 7);
-
-            var btnPanel = new FlowLayoutPanel { Dock = DockStyle.Fill, FlowDirection = FlowDirection.RightToLeft, Padding = new Padding(0, 8, 0, 0) };
-            var btnCancel = MakeButton("Cancel", Color.FromArgb(149, 165, 166));
-            btnCancel.Click += (_, _) => { DialogResult = DialogResult.Cancel; Close(); };
-            var btnSave = MakeButton("Save", Color.FromArgb(39, 174, 96));
-            btnSave.Click += (_, _) => Save();
-            btnPanel.Controls.Add(btnCancel);
-            btnPanel.Controls.Add(btnSave);
-
-            var root = new TableLayoutPanel { Dock = DockStyle.Fill, RowCount = 2, ColumnCount = 1 };
-            root.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
-            root.RowStyles.Add(new RowStyle(SizeType.Absolute, 52));
-            root.Controls.Add(layout, 0, 0);
-            root.Controls.Add(btnPanel, 0, 1);
-            Controls.Add(root);
-
-            AcceptButton = btnSave;
-            CancelButton = btnCancel;
-            Shown += (_, _) => txtName.Focus();
             txtName.Text = c.Name; txtPhone.Text = c.Phone; txtEmail.Text = c.Email; txtAddress.Text = c.Address;
         }
+
+        private void btnCancel_Click(object? sender, EventArgs e)
+        {
+            DialogResult = DialogResult.Cancel;
+            Close();
+        }
+
+        private void btnSave_Click(object? sender, EventArgs e) => Save();
+
+        private void FrmCustomerEdit_Shown(object? sender, EventArgs e) => txtName.Focus();
 
         private void Save()
         {

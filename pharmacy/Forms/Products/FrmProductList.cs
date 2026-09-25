@@ -5,48 +5,37 @@ using pharmacy.Models;
 
 namespace pharmacy.Forms.Products
 {
-    public class FrmProductList : BaseForm
+    public partial class FrmProductList : BaseForm
     {
         private readonly IProductRepository _products;
         private readonly IRepository<Category> _categories;
-        private readonly DataGridView dgv = new();
-        private readonly TextBox txtSearch = new();
 
         public FrmProductList(IProductRepository products, IRepository<Category> categories)
         {
+            InitializeComponent();
             _products = products;
             _categories = categories;
-            Text = "Products";
-            ClientSize = new Size(950, 500);
-            MinimumSize = new Size(600, 350);
-
-            var toolbar = new FlowLayoutPanel { Dock = DockStyle.Top, Height = 48, Padding = new Padding(8, 8, 8, 0), WrapContents = false };
-            var lbl = new Label { Text = "Search:", AutoSize = true, Margin = new Padding(0, 10, 4, 0) };
-            txtSearch.Width = 280;
-            txtSearch.Margin = new Padding(0, 6, 12, 0);
-            txtSearch.TextChanged += async (_, _) => await LoadDataAsync();
-
-            var btnNew = MakeButton("New (F2)", Color.FromArgb(41, 128, 185));
-            btnNew.Margin = new Padding(0, 2, 8, 0);
-            btnNew.Click += (_, _) => Edit(null);
-
-            var btnEdit = MakeButton("Edit", Color.FromArgb(39, 174, 96));
-            btnEdit.Margin = new Padding(0, 2, 8, 0);
-            btnEdit.Click += (_, _) => EditSelected();
-
-            var btnDelete = MakeButton("Delete", Color.FromArgb(231, 76, 60));
-            btnDelete.Margin = new Padding(0, 2, 8, 0);
-            btnDelete.Click += async (_, _) => await DeleteAsync();
-
-            toolbar.Controls.AddRange([lbl, txtSearch, btnNew, btnEdit, btnDelete]);
-            dgv.Dock = DockStyle.Fill;
             GridStyler.Apply(dgv);
-            dgv.CellDoubleClick += (_, _) => EditSelected();
-            KeyDown += (_, e) => { if (e.KeyCode == Keys.F2) Edit(null); if (e.KeyCode == Keys.F4) txtSearch.Focus(); if (e.KeyCode == Keys.Delete) _ = DeleteAsync(); };
-
-            Controls.AddRange([dgv, toolbar]);
-            Load += async (_, _) => await LoadDataAsync();
         }
+
+        private async void txtSearch_TextChanged(object? sender, EventArgs e) => await LoadDataAsync();
+
+        private void btnNew_Click(object? sender, EventArgs e) => Edit(null);
+
+        private void btnEdit_Click(object? sender, EventArgs e) => EditSelected();
+
+        private async void btnDelete_Click(object? sender, EventArgs e) => await DeleteAsync();
+
+        private void dgv_CellDoubleClick(object? sender, DataGridViewCellEventArgs e) => EditSelected();
+
+        private void FrmProductList_KeyDown(object? sender, KeyEventArgs e)
+        {
+            if (e.KeyCode == Keys.F2) Edit(null);
+            if (e.KeyCode == Keys.F4) txtSearch.Focus();
+            if (e.KeyCode == Keys.Delete) _ = DeleteAsync();
+        }
+
+        private async void FrmProductList_Load(object? sender, EventArgs e) => await LoadDataAsync();
 
         private async Task LoadDataAsync()
         {
@@ -108,77 +97,18 @@ namespace pharmacy.Forms.Products
         }
     }
 
-    public class FrmProductEdit : BaseForm
+    public partial class FrmProductEdit : BaseForm
     {
         private readonly Product _p;
-        private readonly TextBox txtName = new();
-        private readonly TextBox txtBarcode = new();
-        private readonly NumericUpDown numUnit = new() { Maximum = 1_000_000, DecimalPlaces = 2, Increment = 0.25m };
-        private readonly NumericUpDown numCost = new() { Maximum = 1_000_000, DecimalPlaces = 2, Increment = 0.25m };
-        private readonly NumericUpDown numReorder = new() { Maximum = 100_000 };
-        private readonly CheckBox chkRx = new() { Text = "Prescription required" };
-        private readonly ComboBox cmbCategory = new() { DropDownStyle = ComboBoxStyle.DropDownList };
 
         public FrmProductEdit(Product p, List<Category> categories)
         {
+            InitializeComponent();
             _p = p;
             Text = p.Id == 0 ? "New Product" : "Edit Product";
-            ClientSize = new Size(480, 460);
-            FormBorderStyle = FormBorderStyle.FixedDialog;
-            MaximizeBox = false; MinimizeBox = false;
-
             cmbCategory.DataSource = categories;
             cmbCategory.DisplayMember = nameof(Category.Name);
             cmbCategory.ValueMember = nameof(Category.Id);
-
-            var layout = new TableLayoutPanel
-            {
-                Dock = DockStyle.Fill,
-                Padding = new Padding(16),
-                ColumnCount = 1,
-                RowCount = 13
-            };
-            for (var i = 0; i < 12; i += 2)
-            {
-                layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 24));
-                layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 32));
-            }
-            layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 52));
-
-            void Row(string label, Control c, int labelRow)
-            {
-                layout.Controls.Add(new Label { Text = label, AutoSize = true, Anchor = AnchorStyles.Left }, 0, labelRow);
-                c.Dock = DockStyle.Fill;
-                layout.Controls.Add(c, 0, labelRow + 1);
-            }
-
-            Row("Category", cmbCategory, 0);
-            Row("Name", txtName, 2);
-            Row("Barcode", txtBarcode, 4);
-            Row("Unit Price", numUnit, 6);
-            Row("Cost Price", numCost, 8);
-            Row("Reorder Level", numReorder, 10);
-            layout.Controls.Add(chkRx, 0, 12);
-
-            var btnPanel = new FlowLayoutPanel { Dock = DockStyle.Fill, FlowDirection = FlowDirection.RightToLeft, Padding = new Padding(0, 8, 0, 0) };
-            var btnCancel = MakeButton("Cancel", Color.FromArgb(149, 165, 166));
-            btnCancel.Click += (_, _) => { DialogResult = DialogResult.Cancel; Close(); };
-            var btnSave = MakeButton("Save", Color.FromArgb(39, 174, 96));
-            btnSave.Click += (_, _) => Save();
-            btnPanel.Controls.Add(btnCancel);
-            btnPanel.Controls.Add(btnSave);
-
-            var root = new TableLayoutPanel { Dock = DockStyle.Fill, RowCount = 2, ColumnCount = 1 };
-            root.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
-            root.RowStyles.Add(new RowStyle(SizeType.Absolute, 52));
-            root.Controls.Add(layout, 0, 0);
-            root.Controls.Add(btnPanel, 0, 1);
-            Controls.Add(root);
-
-            AcceptButton = btnSave;
-            CancelButton = btnCancel;
-            Shown += (_, _) => txtName.Focus();
-
             txtName.Text = p.Name;
             txtBarcode.Text = p.Barcode;
             numUnit.Value = p.UnitPrice;
@@ -187,6 +117,16 @@ namespace pharmacy.Forms.Products
             chkRx.Checked = p.IsPrescriptionRequired;
             if (p.CategoryId > 0) cmbCategory.SelectedValue = p.CategoryId;
         }
+
+        private void btnCancel_Click(object? sender, EventArgs e)
+        {
+            DialogResult = DialogResult.Cancel;
+            Close();
+        }
+
+        private void btnSave_Click(object? sender, EventArgs e) => Save();
+
+        private void FrmProductEdit_Shown(object? sender, EventArgs e) => txtName.Focus();
 
         private void Save()
         {

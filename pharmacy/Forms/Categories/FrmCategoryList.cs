@@ -5,53 +5,35 @@ using pharmacy.Models;
 
 namespace pharmacy.Forms.Categories
 {
-    public class FrmCategoryList : BaseForm
+    public partial class FrmCategoryList : BaseForm
     {
         private readonly IRepository<Category> _repo;
-        private readonly DataGridView dgv = new();
-        private readonly TextBox txtSearch = new();
 
         public FrmCategoryList(IRepository<Category> repo)
         {
+            InitializeComponent();
             _repo = repo;
-            Text = "Categories";
-            ClientSize = new Size(700, 450);
-            MinimumSize = new Size(500, 300);
-
-            var toolbar = new FlowLayoutPanel { Dock = DockStyle.Top, Height = 48, Padding = new Padding(8, 8, 8, 0), WrapContents = false };
-            var lbl = new Label { Text = "Search:", AutoSize = true, Margin = new Padding(0, 10, 4, 0) };
-            txtSearch.Width = 220;
-            txtSearch.Margin = new Padding(0, 6, 12, 0);
-            txtSearch.TextChanged += async (_, _) => await LoadDataAsync();
-
-            var btnNew = MakeButton("New (F2)", Color.FromArgb(41, 128, 185));
-            btnNew.Margin = new Padding(0, 2, 8, 0);
-            btnNew.Click += (_, _) => Edit(null);
-
-            var btnEdit = MakeButton("Edit", Color.FromArgb(39, 174, 96));
-            btnEdit.Margin = new Padding(0, 2, 8, 0);
-            btnEdit.Click += (_, _) => EditSelected();
-
-            var btnDelete = MakeButton("Delete", Color.FromArgb(231, 76, 60));
-            btnDelete.Margin = new Padding(0, 2, 8, 0);
-            btnDelete.Click += async (_, _) => await DeleteAsync();
-
-            toolbar.Controls.AddRange([lbl, txtSearch, btnNew, btnEdit, btnDelete]);
-
-            dgv.Dock = DockStyle.Fill;
             GridStyler.Apply(dgv);
-            dgv.CellDoubleClick += (_, _) => EditSelected();
-
-            KeyDown += (_, e) =>
-            {
-                if (e.KeyCode == Keys.F2) Edit(null);
-                if (e.KeyCode == Keys.F4) txtSearch.Focus();
-                if (e.KeyCode == Keys.Delete) _ = DeleteAsync();
-            };
-
-            Controls.AddRange([dgv, toolbar]);
-            Load += async (_, _) => await LoadDataAsync();
         }
+
+        private async void txtSearch_TextChanged(object? sender, EventArgs e) => await LoadDataAsync();
+
+        private void btnNew_Click(object? sender, EventArgs e) => Edit(null);
+
+        private void btnEdit_Click(object? sender, EventArgs e) => EditSelected();
+
+        private async void btnDelete_Click(object? sender, EventArgs e) => await DeleteAsync();
+
+        private void dgv_CellDoubleClick(object? sender, DataGridViewCellEventArgs e) => EditSelected();
+
+        private void FrmCategoryList_KeyDown(object? sender, KeyEventArgs e)
+        {
+            if (e.KeyCode == Keys.F2) Edit(null);
+            if (e.KeyCode == Keys.F4) txtSearch.Focus();
+            if (e.KeyCode == Keys.Delete) _ = DeleteAsync();
+        }
+
+        private async void FrmCategoryList_Load(object? sender, EventArgs e) => await LoadDataAsync();
 
         private async Task LoadDataAsync()
         {
@@ -92,59 +74,28 @@ namespace pharmacy.Forms.Categories
         }
     }
 
-    public class FrmCategoryEdit : BaseForm
+    public partial class FrmCategoryEdit : BaseForm
     {
         private readonly Category _cat;
-        private readonly TextBox txtName = new();
-        private readonly TextBox txtDesc = new();
 
         public FrmCategoryEdit(Category cat)
         {
+            InitializeComponent();
             _cat = cat;
             Text = cat.Id == 0 ? "New Category" : "Edit Category";
-            ClientSize = new Size(440, 280);
-            FormBorderStyle = FormBorderStyle.FixedDialog;
-            MaximizeBox = false; MinimizeBox = false;
-
-            var layout = new TableLayoutPanel
-            {
-                Dock = DockStyle.Fill,
-                Padding = new Padding(16),
-                ColumnCount = 1,
-                RowCount = 5
-            };
-            layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 24));
-            layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 32));
-            layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 24));
-            layout.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
-            layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 48));
-
-            layout.Controls.Add(new Label { Text = "Name", AutoSize = true, Anchor = AnchorStyles.Left }, 0, 0);
-            txtName.Dock = DockStyle.Fill;
             txtName.Text = cat.Name;
-            layout.Controls.Add(txtName, 0, 1);
-
-            layout.Controls.Add(new Label { Text = "Description", AutoSize = true, Anchor = AnchorStyles.Left }, 0, 2);
-            txtDesc.Dock = DockStyle.Fill;
-            txtDesc.Multiline = true;
-            txtDesc.ScrollBars = ScrollBars.Vertical;
             txtDesc.Text = cat.Description ?? "";
-            layout.Controls.Add(txtDesc, 0, 3);
-
-            var btnPanel = new FlowLayoutPanel { Dock = DockStyle.Fill, FlowDirection = FlowDirection.RightToLeft, Padding = new Padding(0, 8, 0, 0) };
-            var btnCancel = MakeButton("Cancel", Color.FromArgb(149, 165, 166));
-            btnCancel.Click += (_, _) => { DialogResult = DialogResult.Cancel; Close(); };
-            var btnSave = MakeButton("Save", Color.FromArgb(39, 174, 96));
-            btnSave.Click += (_, _) => Save();
-            btnPanel.Controls.Add(btnCancel);
-            btnPanel.Controls.Add(btnSave);
-            layout.Controls.Add(btnPanel, 0, 4);
-
-            Controls.Add(layout);
-            AcceptButton = btnSave;
-            CancelButton = btnCancel;
-            Shown += (_, _) => txtName.Focus();
         }
+
+        private void btnCancel_Click(object? sender, EventArgs e)
+        {
+            DialogResult = DialogResult.Cancel;
+            Close();
+        }
+
+        private void btnSave_Click(object? sender, EventArgs e) => Save();
+
+        private void FrmCategoryEdit_Shown(object? sender, EventArgs e) => txtName.Focus();
 
         private void Save()
         {

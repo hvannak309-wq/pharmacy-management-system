@@ -5,54 +5,37 @@ using pharmacy.Models;
 
 namespace pharmacy.Forms.Users
 {
-    public class FrmUserList : BaseForm
+    public partial class FrmUserList : BaseForm
     {
         private readonly IUserRepository _users;
         private readonly IAuthService _auth;
-        private readonly DataGridView dgv = new();
 
         public FrmUserList(IUserRepository users, IAuthService auth)
         {
+            InitializeComponent();
             _users = users;
             _auth = auth;
-            Text = "Users";
-            ClientSize = new Size(780, 450);
-            MinimumSize = new Size(550, 320);
-
-            var toolbar = new FlowLayoutPanel { Dock = DockStyle.Top, Height = 48, Padding = new Padding(8, 8, 8, 0), WrapContents = false };
-
-            var btnNew = MakeButton("New (F2)", Color.FromArgb(41, 128, 185));
-            btnNew.Margin = new Padding(0, 2, 8, 0);
-            btnNew.Click += (_, _) => Edit(null);
-
-            var btnEdit = MakeButton("Edit", Color.FromArgb(39, 174, 96));
-            btnEdit.Margin = new Padding(0, 2, 8, 0);
-            btnEdit.Click += (_, _) => EditSelected();
-
-            var btnDeactivate = MakeButton("Deactivate", Color.FromArgb(231, 76, 60));
-            btnDeactivate.Width = 120;
-            btnDeactivate.Margin = new Padding(0, 2, 8, 0);
-            btnDeactivate.Click += async (_, _) => await DeactivateAsync();
-
-            var btnRemove = MakeButton("Remove Account", Color.FromArgb(192, 57, 43));
-            btnRemove.Width = 140;
-            btnRemove.Margin = new Padding(0, 2, 8, 0);
-            btnRemove.Click += async (_, _) => await RemoveAsync();
-
-            toolbar.Controls.AddRange([btnNew, btnEdit, btnDeactivate, btnRemove]);
-            dgv.Dock = DockStyle.Fill;
             GridStyler.Apply(dgv);
-            dgv.CellDoubleClick += (_, _) => EditSelected();
-            KeyDown += (_, e) =>
-            {
-                if (e.KeyCode == Keys.F2) Edit(null);
-                if (e.KeyCode == Keys.Delete && e.Shift) _ = RemoveAsync();
-                else if (e.KeyCode == Keys.Delete) _ = DeactivateAsync();
-            };
-
-            Controls.AddRange([dgv, toolbar]);
-            Load += async (_, _) => await LoadDataAsync();
         }
+
+        private void btnNew_Click(object? sender, EventArgs e) => Edit(null);
+
+        private void btnEdit_Click(object? sender, EventArgs e) => EditSelected();
+
+        private async void btnDeactivate_Click(object? sender, EventArgs e) => await DeactivateAsync();
+
+        private async void btnRemove_Click(object? sender, EventArgs e) => await RemoveAsync();
+
+        private void dgv_CellDoubleClick(object? sender, DataGridViewCellEventArgs e) => EditSelected();
+
+        private void FrmUserList_KeyDown(object? sender, KeyEventArgs e)
+        {
+            if (e.KeyCode == Keys.F2) Edit(null);
+            if (e.KeyCode == Keys.Delete && e.Shift) _ = RemoveAsync();
+            else if (e.KeyCode == Keys.Delete) _ = DeactivateAsync();
+        }
+
+        private async void FrmUserList_Load(object? sender, EventArgs e) => await LoadDataAsync();
 
         private async Task LoadDataAsync()
         {
@@ -114,75 +97,33 @@ namespace pharmacy.Forms.Users
         }
     }
 
-    public class FrmUserEdit : BaseForm
+    public partial class FrmUserEdit : BaseForm
     {
         private readonly User _u;
-        private readonly TextBox txtUsername = new();
-        private readonly TextBox txtFullName = new();
-        private readonly TextBox txtPassword = new();
-        private readonly ComboBox cmbRole = new() { DropDownStyle = ComboBoxStyle.DropDownList };
-        private readonly CheckBox chkActive = new() { Text = "Active (can log in)" };
 
         public string Password => txtPassword.Text;
 
         public FrmUserEdit(User u)
         {
+            InitializeComponent();
             _u = u;
             Text = u.Id == 0 ? "New User" : "Edit User";
-            ClientSize = new Size(440, 400);
-            FormBorderStyle = FormBorderStyle.FixedDialog;
-            MaximizeBox = false; MinimizeBox = false;
-
             cmbRole.DataSource = Enum.GetValues<UserRole>();
-
-            var layout = new TableLayoutPanel
-            {
-                Dock = DockStyle.Fill,
-                Padding = new Padding(16),
-                ColumnCount = 1,
-                RowCount = 9
-            };
-            for (var i = 0; i < 8; i++) layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 24));
-            layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 52));
-
-            void Row(string label, Control c, int labelRow)
-            {
-                layout.Controls.Add(new Label { Text = label, AutoSize = true, Anchor = AnchorStyles.Left }, 0, labelRow);
-                c.Dock = DockStyle.Fill;
-                layout.Controls.Add(c, 0, labelRow + 1);
-            }
-
-            Row("Username", txtUsername, 0);
-            Row("Full Name", txtFullName, 2);
-            Row("Password (blank keeps current)", txtPassword, 4);
-            txtPassword.UseSystemPasswordChar = true;
-            Row("Role", cmbRole, 6);
             chkActive.Checked = u.IsActive;
-            layout.Controls.Add(chkActive, 0, 8);
-
-            var btnPanel = new FlowLayoutPanel { Dock = DockStyle.Fill, FlowDirection = FlowDirection.RightToLeft, Padding = new Padding(0, 8, 0, 0) };
-            var btnCancel = MakeButton("Cancel", Color.FromArgb(149, 165, 166));
-            btnCancel.Click += (_, _) => { DialogResult = DialogResult.Cancel; Close(); };
-            var btnSave = MakeButton("Save", Color.FromArgb(39, 174, 96));
-            btnSave.Click += (_, _) => Save();
-            btnPanel.Controls.Add(btnCancel);
-            btnPanel.Controls.Add(btnSave);
-
-            var root = new TableLayoutPanel { Dock = DockStyle.Fill, RowCount = 2, ColumnCount = 1 };
-            root.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
-            root.RowStyles.Add(new RowStyle(SizeType.Absolute, 52));
-            root.Controls.Add(layout, 0, 0);
-            root.Controls.Add(btnPanel, 0, 1);
-            Controls.Add(root);
-
-            AcceptButton = btnSave;
-            CancelButton = btnCancel;
-            Shown += (_, _) => txtUsername.Focus();
-
             txtUsername.Text = u.Username;
             txtFullName.Text = u.FullName;
             cmbRole.SelectedItem = u.Role;
         }
+
+        private void btnCancel_Click(object? sender, EventArgs e)
+        {
+            DialogResult = DialogResult.Cancel;
+            Close();
+        }
+
+        private void btnSave_Click(object? sender, EventArgs e) => Save();
+
+        private void FrmUserEdit_Shown(object? sender, EventArgs e) => txtUsername.Focus();
 
         private void Save()
         {

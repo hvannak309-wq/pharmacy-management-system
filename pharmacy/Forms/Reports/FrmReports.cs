@@ -5,54 +5,26 @@ using pharmacy.Models;
 
 namespace pharmacy.Forms.Reports
 {
-    public class FrmSalesReport : BaseForm
+    public partial class FrmSalesReport : BaseForm
     {
         private readonly IReportService _reports;
         private readonly ISaleService _sales;
-        private readonly DateTimePicker dtFrom = new() { Format = DateTimePickerFormat.Short };
-        private readonly DateTimePicker dtTo = new() { Format = DateTimePickerFormat.Short };
-        private readonly DataGridView dgv = new();
-        private readonly Label lblTotal = new();
 
         public FrmSalesReport(IReportService reports, ISaleService sales)
         {
+            InitializeComponent();
             _reports = reports;
             _sales = sales;
-            Text = "Sales Report";
-            ClientSize = new Size(900, 500);
             dtFrom.Value = DateTime.Today.AddDays(-30);
             dtTo.Value = DateTime.Today;
-
-            var bar = new FlowLayoutPanel
-            {
-                Dock = DockStyle.Top,
-                Height = 48,
-                Padding = new Padding(8, 12, 8, 0),
-                WrapContents = false
-            };
-            var lblFrom = new Label { Text = "From:", AutoSize = true, Margin = new Padding(0, 6, 4, 0) };
-            dtFrom.Width = 120;
-            dtFrom.Margin = new Padding(0, 4, 12, 0);
-            var lblTo = new Label { Text = "To:", AutoSize = true, Margin = new Padding(0, 6, 4, 0) };
-            dtTo.Width = 120;
-            dtTo.Margin = new Padding(0, 4, 16, 0);
             dtFrom.ValueChanged += async (_, _) => await RunAsync();
             dtTo.ValueChanged += async (_, _) => await RunAsync();
-
-            lblTotal.AutoSize = true;
-            lblTotal.Font = new Font("Segoe UI", 11f, FontStyle.Bold);
-            lblTotal.Margin = new Padding(0, 4, 0, 0);
-
-            bar.Controls.AddRange([lblFrom, dtFrom, lblTo, dtTo, lblTotal]);
-
-            dgv.Dock = DockStyle.Fill;
             GridStyler.Apply(dgv);
-            dgv.CellDoubleClick += async (_, _) => await ViewSaleAsync();
-
-            Controls.Add(dgv);
-            Controls.Add(bar);
-            Load += async (_, _) => await RunAsync();
         }
+
+        private async void dgv_CellDoubleClick(object? sender, DataGridViewCellEventArgs e) => await ViewSaleAsync();
+
+        private async void FrmSalesReport_Load(object? sender, EventArgs e) => await RunAsync();
 
         private async Task RunAsync()
         {
@@ -88,41 +60,35 @@ namespace pharmacy.Forms.Reports
         }
     }
 
-    public class FrmStockReport : BaseForm
+    public partial class FrmStockReport : BaseForm
     {
         private readonly IReportService _reports;
-        private readonly DataGridView dgv = new();
         private List<Product> _rows = new();
 
         public FrmStockReport(IReportService reports)
         {
+            InitializeComponent();
             _reports = reports;
-            Text = "Stock Report";
-            ClientSize = new Size(900, 500);
-
-            var btnRun = MakeButton("Refresh", Color.FromArgb(41, 128, 185));
-            btnRun.Location = new Point(12, 12);
-            btnRun.Click += async (_, _) => await RunAsync();
-
-            dgv.Location = new Point(12, 55);
-            dgv.Size = new Size(870, 430);
             GridStyler.Apply(dgv);
-            dgv.CellDoubleClick += (_, _) => ViewProduct();
-            dgv.CellFormatting += (_, e) =>
-            {
-                if (e.RowIndex < 0) return;
-                var stock = Convert.ToInt32(dgv.Rows[e.RowIndex].Cells["Stock"]?.Value ?? 0);
-                var reorder = Convert.ToInt32(dgv.Rows[e.RowIndex].Cells["ReorderLevel"]?.Value ?? 0);
-                if (stock <= reorder && e.CellStyle is not null)
-                {
-                    e.CellStyle.BackColor = Color.FromArgb(231, 76, 60);
-                    e.CellStyle.ForeColor = Color.White;
-                }
-            };
-
-            Controls.AddRange([btnRun, dgv]);
-            Load += async (_, _) => await RunAsync();
         }
+
+        private async void btnRun_Click(object? sender, EventArgs e) => await RunAsync();
+
+        private void dgv_CellDoubleClick(object? sender, DataGridViewCellEventArgs e) => ViewProduct();
+
+        private void dgv_CellFormatting(object? sender, DataGridViewCellFormattingEventArgs e)
+        {
+            if (e.RowIndex < 0) return;
+            var stock = Convert.ToInt32(dgv.Rows[e.RowIndex].Cells["Stock"]?.Value ?? 0);
+            var reorder = Convert.ToInt32(dgv.Rows[e.RowIndex].Cells["ReorderLevel"]?.Value ?? 0);
+            if (stock <= reorder && e.CellStyle is not null)
+            {
+                e.CellStyle.BackColor = Color.FromArgb(231, 76, 60);
+                e.CellStyle.ForeColor = Color.White;
+            }
+        }
+
+        private async void FrmStockReport_Load(object? sender, EventArgs e) => await RunAsync();
 
         private async Task RunAsync()
         {
@@ -161,52 +127,22 @@ namespace pharmacy.Forms.Reports
         }
     }
 
-    public class FrmProfitReport : BaseForm
+    public partial class FrmProfitReport : BaseForm
     {
         private readonly IReportService _reports;
-        private readonly DateTimePicker dtFrom = new() { Format = DateTimePickerFormat.Short };
-        private readonly DateTimePicker dtTo = new() { Format = DateTimePickerFormat.Short };
-        private readonly DataGridView dgv = new();
-        private readonly Label lblTotal = new();
 
         public FrmProfitReport(IReportService reports)
         {
+            InitializeComponent();
             _reports = reports;
-            Text = "Profit Report (Revenue − Cost)";
-            ClientSize = new Size(900, 500);
             dtFrom.Value = DateTime.Today.AddDays(-30);
             dtTo.Value = DateTime.Today;
-
-            var bar = new FlowLayoutPanel
-            {
-                Dock = DockStyle.Top,
-                Height = 48,
-                Padding = new Padding(8, 12, 8, 0),
-                WrapContents = false
-            };
-            var lblFrom = new Label { Text = "From:", AutoSize = true, Margin = new Padding(0, 6, 4, 0) };
-            dtFrom.Width = 120;
-            dtFrom.Margin = new Padding(0, 4, 12, 0);
-            var lblTo = new Label { Text = "To:", AutoSize = true, Margin = new Padding(0, 6, 4, 0) };
-            dtTo.Width = 120;
-            dtTo.Margin = new Padding(0, 4, 16, 0);
             dtFrom.ValueChanged += async (_, _) => await RunAsync();
             dtTo.ValueChanged += async (_, _) => await RunAsync();
-
-            lblTotal.AutoSize = true;
-            lblTotal.Font = new Font("Segoe UI", 11f, FontStyle.Bold);
-            lblTotal.ForeColor = Color.FromArgb(39, 174, 96);
-            lblTotal.Margin = new Padding(0, 4, 0, 0);
-
-            bar.Controls.AddRange([lblFrom, dtFrom, lblTo, dtTo, lblTotal]);
-
-            dgv.Dock = DockStyle.Fill;
             GridStyler.Apply(dgv);
-
-            Controls.Add(dgv);
-            Controls.Add(bar);
-            Load += async (_, _) => await RunAsync();
         }
+
+        private async void FrmProfitReport_Load(object? sender, EventArgs e) => await RunAsync();
 
         private async Task RunAsync()
         {
@@ -218,30 +154,23 @@ namespace pharmacy.Forms.Reports
         }
     }
 
-    public class FrmExpiryReport : BaseForm
+    public partial class FrmExpiryReport : BaseForm
     {
         private readonly IBatchService _batches;
-        private readonly DataGridView dgv = new();
         private List<Batch> _rows = new();
 
         public FrmExpiryReport(IBatchService batches)
         {
+            InitializeComponent();
             _batches = batches;
-            Text = "Expiry Report";
-            ClientSize = new Size(900, 500);
-
-            var btnRun = MakeButton("Refresh", Color.FromArgb(41, 128, 185));
-            btnRun.Location = new Point(12, 12);
-            btnRun.Click += async (_, _) => await RunAsync();
-
-            dgv.Location = new Point(12, 55);
-            dgv.Size = new Size(870, 430);
             GridStyler.Apply(dgv);
-            dgv.CellDoubleClick += (_, _) => ViewBatch();
-
-            Controls.AddRange([btnRun, dgv]);
-            Load += async (_, _) => await RunAsync();
         }
+
+        private async void btnRun_Click(object? sender, EventArgs e) => await RunAsync();
+
+        private void dgv_CellDoubleClick(object? sender, DataGridViewCellEventArgs e) => ViewBatch();
+
+        private async void FrmExpiryReport_Load(object? sender, EventArgs e) => await RunAsync();
 
         private async Task RunAsync()
         {

@@ -13,48 +13,26 @@ using pharmacy.UserControls;
 
 namespace pharmacy.Forms
 {
-    public class FrmMain : BaseForm
+    public partial class FrmMain : BaseForm
     {
         private readonly User _user;
-        private readonly Panel pnlContent = new();
-        private readonly MenuStrip menu = new();
-        private readonly StatusStrip status = new();
-        private readonly ToolStripStatusLabel lblUser = new();
-        private readonly UcDashboardCard ucDashboard = new();
-        private readonly DataGridView dgvRecent = new();
-        private readonly Label lblRecentHeader = new();
         private List<Sale> _recentSales = new();
         private bool _dashboardBuilt;
 
         public FrmMain(User user)
         {
+            InitializeComponent();
             _user = user;
             Text = $"PharmacyMS — {user.FullName} ({user.Role})";
-            WindowState = FormWindowState.Maximized;
-            IsMdiContainer = true;
-
-            BuildMenu();
-            pnlContent.Dock = DockStyle.Fill;
-            pnlContent.BackColor = Color.FromArgb(236, 240, 241);
-            pnlContent.Padding = new Padding(10);
-
             lblUser.Text = $"{user.FullName} | {user.Role}";
-            status.Items.Add(lblUser);
-            status.Dock = DockStyle.Bottom;
-
-            Controls.Add(pnlContent);
-            Controls.Add(status);
-            Controls.Add(menu);
-            MainMenuStrip = menu;
-
-            KeyDown += (_, e) =>
-            {
-                if (e.KeyCode == Keys.F2) OpenForm(new FrmPos(AppServices.Sales, AppServices.ProductRepo, AppServices.CustomerRepo, _user));
-                if (e.KeyCode == Keys.F4) Activate();
-            };
-
+            BuildMenu();
             ShowDashboard();
-            ucDashboard.CardOpened += OpenDashboardCard;
+        }
+
+        private void FrmMain_KeyDown(object? sender, KeyEventArgs e)
+        {
+            if (e.KeyCode == Keys.F2) OpenForm(new FrmPos(AppServices.Sales, AppServices.ProductRepo, AppServices.CustomerRepo, _user));
+            if (e.KeyCode == Keys.F4) Activate();
         }
 
         private void OpenDashboardCard(int card)

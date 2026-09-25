@@ -7,35 +7,24 @@ using pharmacy.Models;
 
 namespace pharmacy.Forms.Purchases
 {
-    public class FrmPurchaseList : BaseForm
+    public partial class FrmPurchaseList : BaseForm
     {
         private readonly IPurchaseService _purchases;
-        private readonly DataGridView dgv = new();
 
         public FrmPurchaseList(IPurchaseService purchases)
         {
+            InitializeComponent();
             _purchases = purchases;
-            Text = "Purchases";
-            ClientSize = new Size(900, 480);
-            MinimumSize = new Size(600, 350);
-
-            var toolbar = new FlowLayoutPanel { Dock = DockStyle.Top, Height = 48, Padding = new Padding(8, 8, 8, 0), WrapContents = false };
-            var btnRefresh = MakeButton("Refresh", Color.FromArgb(41, 128, 185));
-            btnRefresh.Margin = new Padding(0, 2, 8, 0);
-            btnRefresh.Click += async (_, _) => await LoadDataAsync();
-
-            var btnView = MakeButton("View", Color.FromArgb(39, 174, 96));
-            btnView.Margin = new Padding(0, 2, 8, 0);
-            btnView.Click += async (_, _) => await ViewAsync();
-
-            toolbar.Controls.AddRange([btnRefresh, btnView]);
-            dgv.Dock = DockStyle.Fill;
             GridStyler.Apply(dgv);
-            dgv.CellDoubleClick += async (_, _) => await ViewAsync();
-
-            Controls.AddRange([dgv, toolbar]);
-            Load += async (_, _) => await LoadDataAsync();
         }
+
+        private async void btnRefresh_Click(object? sender, EventArgs e) => await LoadDataAsync();
+
+        private async void btnView_Click(object? sender, EventArgs e) => await ViewAsync();
+
+        private async void dgv_CellDoubleClick(object? sender, DataGridViewCellEventArgs e) => await ViewAsync();
+
+        private async void FrmPurchaseList_Load(object? sender, EventArgs e) => await LoadDataAsync();
 
         private async Task LoadDataAsync()
         {
@@ -66,26 +55,13 @@ namespace pharmacy.Forms.Purchases
         }
     }
 
-    public class FrmPurchaseView : BaseForm
+    public partial class FrmPurchaseView : BaseForm
     {
         public FrmPurchaseView(Purchase p)
         {
+            InitializeComponent();
             Text = $"Purchase #{p.Id}";
-            ClientSize = new Size(700, 440);
-            MinimumSize = new Size(500, 350);
-
-            var root = new TableLayoutPanel { Dock = DockStyle.Fill, RowCount = 3, ColumnCount = 1, Padding = new Padding(12) };
-            root.RowStyles.Add(new RowStyle(SizeType.Absolute, 90));
-            root.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
-            root.RowStyles.Add(new RowStyle(SizeType.Absolute, 52));
-
-            var info = new Label
-            {
-                Dock = DockStyle.Fill,
-                Text = $"Date: {p.PurchaseDate:g}\nSupplier: {p.Supplier?.Name}\nBy: {p.User?.FullName}\nStatus: {p.Status}\nTotal: {p.TotalAmount:0.00}"
-            };
-
-            var dgv = new DataGridView { Dock = DockStyle.Fill };
+            info.Text = $"Date: {p.PurchaseDate:g}\nSupplier: {p.Supplier?.Name}\nBy: {p.User?.FullName}\nStatus: {p.Status}\nTotal: {p.TotalAmount:0.00}";
             GridStyler.Apply(dgv);
             dgv.DataSource = p.Details.Select(d => new
             {
@@ -96,21 +72,12 @@ namespace pharmacy.Forms.Purchases
                 d.UnitCost,
                 d.Subtotal
             }).ToList();
-
-            var btnPanel = new FlowLayoutPanel { Dock = DockStyle.Fill, FlowDirection = FlowDirection.RightToLeft };
-            var btnClose = MakeButton("Close", Color.FromArgb(149, 165, 166));
-            btnClose.Click += (_, _) => Close();
-            btnPanel.Controls.Add(btnClose);
-
-            root.Controls.Add(info, 0, 0);
-            root.Controls.Add(dgv, 0, 1);
-            root.Controls.Add(btnPanel, 0, 2);
-            Controls.Add(root);
-            AcceptButton = btnClose;
         }
+
+        private void btnClose_Click(object? sender, EventArgs e) => Close();
     }
 
-    public class FrmPurchaseNew : BaseForm
+    public partial class FrmPurchaseNew : BaseForm
     {
         private readonly IPurchaseService _purchases;
         private readonly IProductRepository _products;
@@ -118,45 +85,17 @@ namespace pharmacy.Forms.Purchases
         private readonly IRepository<Category> _categories;
         private readonly User _user;
 
-        private readonly ComboBox cmbSupplier = new() { DropDownStyle = ComboBoxStyle.DropDownList };
-        private readonly ComboBox cmbProduct = new() { DropDownStyle = ComboBoxStyle.DropDownList };
-        private readonly TextBox txtBatch = new();
-        private readonly DateTimePicker dtExpiry = new() { Format = DateTimePickerFormat.Short };
-        private readonly NumericUpDown numQty = new() { Minimum = 1, Maximum = 99999, Value = 1 };
-        private readonly NumericUpDown numCost = new() { Maximum = 1000000, DecimalPlaces = 2, Increment = 0.25m };
-        private readonly DataGridView dgv = new();
-        private readonly Label lblTotal = new();
-
         private readonly List<PurchaseLineDto> _lines = new();
         private List<Product> _productList = new();
 
         public FrmPurchaseNew(IPurchaseService purchases, IProductRepository products, IRepository<Supplier> suppliers, IRepository<Category> categories, User user)
         {
+            InitializeComponent();
             _purchases = purchases;
             _products = products;
             _suppliers = suppliers;
             _categories = categories;
             _user = user;
-            Text = "New Purchase";
-            ClientSize = new Size(1000, 560);
-            MinimumSize = new Size(750, 450);
-
-            var split = new TableLayoutPanel
-            {
-                Dock = DockStyle.Fill,
-                ColumnCount = 2,
-                RowCount = 1,
-                Padding = new Padding(8)
-            };
-            split.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 420));
-            split.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
-
-            var form = new TableLayoutPanel { Dock = DockStyle.Fill, RowCount = 6, ColumnCount = 3, Padding = new Padding(0, 0, 12, 0) };
-            form.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 90));
-            form.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
-            form.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 70));
-            for (var i = 0; i < 5; i++) form.RowStyles.Add(new RowStyle(SizeType.Absolute, 36));
-            form.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
 
             void Row(string label, Control c, int row, Button? extra = null)
             {
@@ -166,65 +105,28 @@ namespace pharmacy.Forms.Purchases
                 if (extra is not null) form.Controls.Add(extra, 2, row);
             }
 
-            var btnNewSupplier = MakeButton("+ New", Color.FromArgb(41, 128, 185));
-            btnNewSupplier.Dock = DockStyle.Fill;
-            btnNewSupplier.Click += async (_, _) => await NewSupplierAsync();
-
-            var btnNewProduct = MakeButton("+ New", Color.FromArgb(41, 128, 185));
-            btnNewProduct.Dock = DockStyle.Fill;
-            btnNewProduct.Click += async (_, _) => await NewProductAsync();
-
-            dtExpiry.Value = DateTime.Today.AddYears(1);
             Row("Supplier", cmbSupplier, 0, btnNewSupplier);
             Row("Product", cmbProduct, 1, btnNewProduct);
             Row("Batch #", txtBatch, 2);
             Row("Expiry", dtExpiry, 3);
-
-            numQty.Width = 70;
-            numCost.Width = 110;
-            var qtyCost = new FlowLayoutPanel { Dock = DockStyle.Fill, Padding = new Padding(0, 4, 0, 0) };
-            qtyCost.Controls.AddRange([numQty, numCost]);
             Row("Qty / Cost", qtyCost, 4);
 
-            var lineButtons = new FlowLayoutPanel { Dock = DockStyle.Fill, Padding = new Padding(0, 6, 0, 0) };
-            var btnAddLine = MakeButton("Add Line", Color.FromArgb(41, 128, 185));
-            btnAddLine.Margin = new Padding(0, 0, 8, 0);
-            btnAddLine.Click += (_, _) => AddLine();
-            var btnRemoveLine = MakeButton("Remove Line", Color.FromArgb(192, 57, 43));
-            btnRemoveLine.Click += (_, _) => RemoveLine();
-            lineButtons.Controls.AddRange([btnAddLine, btnRemoveLine]);
-            form.Controls.Add(lineButtons, 1, 5);
-
-            cmbProduct.SelectedIndexChanged += (_, _) => SuggestBatch();
-
-            var right = new TableLayoutPanel { Dock = DockStyle.Fill, RowCount = 2, ColumnCount = 1 };
-            right.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
-            right.RowStyles.Add(new RowStyle(SizeType.Absolute, 48));
-
-            dgv.Dock = DockStyle.Fill;
             GridStyler.Apply(dgv);
-
-            lblTotal.Font = new Font("Segoe UI", 14f, FontStyle.Bold);
-            lblTotal.ForeColor = Color.FromArgb(41, 128, 185);
-            lblTotal.Dock = DockStyle.Fill;
-            lblTotal.TextAlign = ContentAlignment.MiddleLeft;
-
-            right.Controls.Add(dgv, 0, 0);
-            right.Controls.Add(lblTotal, 0, 1);
-
-            split.Controls.Add(form, 0, 0);
-            split.Controls.Add(right, 1, 0);
-
-            var bottom = new FlowLayoutPanel { Dock = DockStyle.Bottom, Height = 56, FlowDirection = FlowDirection.RightToLeft, Padding = new Padding(8) };
-            var btnSave = MakeButton("Save Purchase", Color.FromArgb(39, 174, 96));
-            btnSave.Size = new Size(180, 44);
-            btnSave.Click += async (_, _) => await SaveAsync();
-            bottom.Controls.Add(btnSave);
-
-            Controls.Add(split);
-            Controls.Add(bottom);
-            Load += async (_, _) => await InitAsync();
         }
+
+        private async void btnNewSupplier_Click(object? sender, EventArgs e) => await NewSupplierAsync();
+
+        private async void btnNewProduct_Click(object? sender, EventArgs e) => await NewProductAsync();
+
+        private void cmbProduct_SelectedIndexChanged(object? sender, EventArgs e) => SuggestBatch();
+
+        private void btnAddLine_Click(object? sender, EventArgs e) => AddLine();
+
+        private void btnRemoveLine_Click(object? sender, EventArgs e) => RemoveLine();
+
+        private async void btnSave_Click(object? sender, EventArgs e) => await SaveAsync();
+
+        private async void FrmPurchaseNew_Load(object? sender, EventArgs e) => await InitAsync();
 
         private async Task InitAsync()
         {
